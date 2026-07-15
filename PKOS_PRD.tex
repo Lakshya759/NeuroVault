@@ -1,0 +1,406 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{amssymb}
+
+\title{Personal Knowledge OS (PKOS) \\ \large Product Requirements Document (PRD)}
+\author{}
+\date{}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+}
+
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+\begin{document}
+
+\maketitle
+
+\section{Vision}
+
+Personal Knowledge OS is an AI-powered learning and knowledge management platform that helps users capture information from multiple sources, organize it into a structured knowledge base, retrieve it intelligently, and retain it through personalized revision recommendations.
+
+The goal is not simply to store information, but to transform scattered content into long-term, reusable knowledge.
+
+\section{Problem Statement}
+
+Modern learners consume information from many sources:
+
+\begin{itemize}[nosep]
+    \item Articles
+    \item Documentation
+    \item YouTube videos
+    \item Research papers
+    \item Personal notes
+    \item Tutorials
+\end{itemize}
+
+Over time, several problems emerge:
+
+\begin{enumerate}[nosep]
+    \item Information becomes scattered across bookmarks, notes, PDFs, and browser tabs.
+    \item Users remember learning something but cannot locate it quickly.
+    \item Related concepts remain disconnected.
+    \item Valuable knowledge is forgotten due to lack of revision.
+    \item Existing note-taking tools focus on storage rather than learning and retention.
+\end{enumerate}
+
+As a result, users repeatedly relearn concepts they have already studied.
+
+\section{Target Users}
+
+\subsection{Primary Users}
+
+\subsubsection{Students}
+
+\begin{itemize}[nosep]
+    \item Engineering students
+    \item Competitive programmers
+    \item University learners
+\end{itemize}
+
+\textbf{Need:}
+\begin{itemize}[nosep]
+    \item Organize study materials
+    \item Revise concepts efficiently
+    \item Track learning progress
+\end{itemize}
+
+\subsubsection{Software Engineers}
+
+\textbf{Need:}
+\begin{itemize}[nosep]
+    \item Store technical knowledge
+    \item Quickly retrieve information during development
+    \item Build a personal technical knowledge base
+\end{itemize}
+
+\subsubsection{AI/ML Learners}
+
+\textbf{Need:}
+\begin{itemize}[nosep]
+    \item Manage research papers
+    \item Connect concepts across topics
+    \item Generate summaries and revision material
+\end{itemize}
+
+\section{Product Goals}
+
+The platform should help users:
+
+\begin{enumerate}[nosep]
+    \item Capture knowledge from any source.
+    \item Organize information automatically.
+    \item Retrieve knowledge instantly.
+    \item Discover relationships between concepts.
+    \item Revise information before forgetting it.
+    \item Build a long-term personal knowledge repository.
+\end{enumerate}
+
+\section{Core Product Pillars}
+
+\subsection{Pillar 1: Knowledge Capture}
+
+The system should allow users to save information from multiple sources.
+
+\textbf{Supported sources:}
+\begin{itemize}[nosep]
+    \item Web articles
+    \item PDFs
+    \item YouTube videos
+    \item Manual notes
+    \item Documentation pages
+\end{itemize}
+
+\textbf{For every saved source, the platform stores:}
+\begin{itemize}[nosep]
+    \item Title
+    \item Content
+    \item Source URL
+    \item Date added
+    \item Source type
+    \item User metadata
+\end{itemize}
+
+\subsection{Pillar 2: Knowledge Organization}
+
+The system automatically structures saved content.
+
+Each item should be categorized using:
+
+\textbf{Domain}
+\begin{itemize}[nosep]
+    \item Programming
+    \item AI
+    \item Databases
+    \item System Design
+    \item Networking
+\end{itemize}
+
+\textbf{Topic}
+\begin{itemize}[nosep]
+    \item Redis
+    \item PostgreSQL
+    \item Docker
+    \item RAG
+\end{itemize}
+
+\textbf{Difficulty}
+\begin{itemize}[nosep]
+    \item Beginner
+    \item Intermediate
+    \item Advanced
+\end{itemize}
+
+\textbf{Content Type}
+\begin{itemize}[nosep]
+    \item Article
+    \item Video
+    \item PDF
+    \item Note
+\end{itemize}
+
+\textbf{Status}
+\begin{itemize}[nosep]
+    \item Unread
+    \item Reading
+    \item Learned
+    \item Mastered
+\end{itemize}
+
+The user may manually edit classifications.
+
+\subsection{Pillar 3: Knowledge Retrieval}
+
+Users should be able to search their knowledge base naturally.
+
+\textbf{Example queries:}
+\begin{itemize}[nosep]
+    \item What do I know about Redis?
+    \item Show all notes about authentication.
+    \item Find resources related to system design.
+    \item Which articles discuss caching?
+\end{itemize}
+
+\textbf{The platform should return:}
+\begin{itemize}[nosep]
+    \item Relevant sources
+    \item Extracted snippets
+    \item Related concepts
+    \item AI-generated summaries
+\end{itemize}
+
+\subsection{Pillar 4: AI Question Answering}
+
+Users can ask questions against their knowledge base.
+
+\textbf{Examples:}
+\begin{itemize}[nosep]
+    \item Explain Redis based on my saved resources.
+    \item Summarize everything I know about databases.
+    \item Compare PostgreSQL and MongoDB using my notes.
+\end{itemize}
+
+\textbf{Responses must:}
+\begin{itemize}[nosep]
+    \item Use only saved content.
+    \item Cite sources.
+    \item Link back to original documents.
+\end{itemize}
+
+\textbf{If information is unavailable}, the system should clearly indicate:
+
+\begin{quote}
+    \textit{``This information does not exist in your knowledge base.''}
+\end{quote}
+
+\subsection{Pillar 5: Knowledge Connections}
+
+The system should automatically identify relationships between content.
+
+\textbf{Example:}
+
+Article A:
+\begin{itemize}[nosep]
+    \item Redis caching
+\end{itemize}
+
+Article B:
+\begin{itemize}[nosep]
+    \item System design interview notes
+\end{itemize}
+
+Detected connection:
+\begin{itemize}[nosep]
+    \item Scalability
+    \item Performance optimization
+\end{itemize}
+
+\textbf{Users should be able to explore:}
+\begin{itemize}[nosep]
+    \item Related documents
+    \item Related topics
+    \item Related concepts
+\end{itemize}
+
+\subsection{Pillar 6: Revision \& Retention}
+
+The system should actively help users retain knowledge.
+
+\textbf{Each knowledge item maintains:}
+\begin{itemize}[nosep]
+    \item Date added
+    \item Last revision date
+    \item Revision count
+    \item Confidence score
+    \item Knowledge score
+\end{itemize}
+
+\subsubsection{Revision Recommendation Engine}
+
+The system recommends revisions based on:
+
+\begin{itemize}[nosep]
+    \item Time since learning
+    \item Time since last revision
+    \item Confidence level
+    \item Topic importance
+    \item User activity
+\end{itemize}
+
+\textbf{Example:}
+
+Today's Revision List:
+\begin{enumerate}[nosep]
+    \item Redis Fundamentals
+    \item Bellman-Ford Algorithm
+    \item HTTP Caching
+\end{enumerate}
+
+\subsubsection{Smart Revision Material}
+
+Instead of reopening entire documents, the system generates:
+
+\begin{itemize}[nosep]
+    \item Key points
+    \item Summaries
+    \item Flashcards
+    \item Quiz questions
+    \item Important concepts
+\end{itemize}
+
+All generated from saved knowledge.
+
+\subsection{Pillar 7: Learning Progress Tracking}
+
+The platform tracks learning activity.
+
+\textbf{Metrics:}
+\begin{itemize}[nosep]
+    \item Total knowledge items
+    \item Topics learned
+    \item Revision streak
+    \item Most studied domains
+    \item Weakest knowledge areas
+    \item Knowledge growth over time
+\end{itemize}
+
+\section{User Dashboard}
+
+The home dashboard should display:
+
+\subsection{Knowledge Overview}
+\begin{itemize}[nosep]
+    \item Total saved resources
+    \item Total topics
+    \item Total revisions completed
+\end{itemize}
+
+\subsection{Today's Revision Queue}
+
+Recommended items for revision.
+
+\subsection{Recently Added Knowledge}
+
+Recent articles, notes, and PDFs.
+
+\subsection{Learning Insights}
+
+Examples:
+\begin{itemize}[nosep]
+    \item Networking has not been revised in 30 days.
+    \item Databases is your most studied topic.
+    \item You are currently learning Backend Development.
+\end{itemize}
+
+\section{Search Experience}
+
+The platform should support:
+
+\subsection{Structured Search}
+
+Examples:
+\begin{itemize}[nosep]
+    \item Topic = Databases
+    \item Status = Learned
+    \item Difficulty = Intermediate
+\end{itemize}
+
+\subsection{Semantic Search}
+
+Examples:
+\begin{itemize}[nosep]
+    \item How can I improve backend performance?
+    \item Explain caching strategies.
+\end{itemize}
+
+\section{Knowledge Graph View (Future)}
+
+Visual representation of relationships between:
+
+\begin{itemize}[nosep]
+    \item Topics
+    \item Concepts
+    \item Documents
+\end{itemize}
+
+\textbf{Example:}
+
+\begin{center}
+Redis \\
+$\downarrow$ \\
+Caching \\
+$\downarrow$ \\
+Performance \\
+$\downarrow$ \\
+Scalability
+\end{center}
+
+Users can explore how concepts connect across their knowledge base.
+
+\section{Success Metrics}
+
+The product is successful if users can:
+
+\begin{enumerate}[nosep]
+    \item Find previously learned information within seconds.
+    \item Reduce repeated relearning.
+    \item Build a structured long-term knowledge repository.
+    \item Maintain a consistent revision habit.
+    \item Discover new connections between saved knowledge.
+\end{enumerate}
+
+\section{Product Vision Statement}
+
+Personal Knowledge OS transforms information into retained knowledge by combining intelligent organization, semantic retrieval, AI-assisted understanding, and personalized revision guidance within a single learning platform.
+
+\end{document}
