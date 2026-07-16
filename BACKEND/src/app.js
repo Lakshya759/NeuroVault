@@ -16,11 +16,13 @@ app.get("/",(req,res)=>{
 });
 
 //---------------------Routes------------------
-import userRouter from "./auth/auth.routes.js"
+import userRouter from "./auth/auth.routes.js" 
+import materialRouter from "./upload/upload.routes.js"
 
 
 
 app.use("/api/v0/users",userRouter)
+app.use("/api/v0/material",materialRouter)
 
 
 
