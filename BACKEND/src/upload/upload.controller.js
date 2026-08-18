@@ -2,7 +2,7 @@ import {ApiError} from "../utils/ApiError.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import pool from "../db/pool.js"
-import {REGISTER_MATERIAL,CREATE_EMBEDDING} from "./upload.query.js"
+import {REGISTER_MATERIAL,CREATE_EMBEDDING,FETCH_MATERIAL} from "./upload.query.js"
 import getEmbedding from "./upload.services.js"
 
 
@@ -50,7 +50,29 @@ const createMaterial = asyncHandler(async (req, res) => {
         )
 });
 
-export{createMaterial}
+const fetchMaterial = asyncHandler(async(req,res)=>{
+    const user=req.user;
+
+    if(!user){
+        throw new ApiError(404,"User not found")
+    }
+
+    const material= await pool.query(
+        FETCH_MATERIAL,
+        [user.id]
+    )
+
+    if(!material){
+        throw new ApiError(404, "No Notes Found")
+    }
+    
+    res.status(200)
+    .json(
+        new ApiResponse(200,material.rows,"Material Fetched Successfully")
+    )
+})
+
+export{createMaterial,fetchMaterial}
 
 /*However, for your Personal Knowledge OS, I would not keep it this way for
 Why?

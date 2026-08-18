@@ -18,11 +18,12 @@ app.get("/",(req,res)=>{
 //---------------------Routes------------------
 import userRouter from "./auth/auth.routes.js" 
 import materialRouter from "./upload/upload.routes.js"
-
+import chatBotRouter from "./chatBot/chatBot.routes.js"
 
 
 app.use("/api/v0/users",userRouter)
 app.use("/api/v0/material",materialRouter)
+app.use("/api/v0/chat",chatBotRouter)
 
 
 
