@@ -1,10 +1,10 @@
 import ai from "./geminiConfig.js";
 
 class GeminiService {
-    static async generate(prompt) {
+    static async generate(prompt,model) {
         try {
             const response = await ai.models.generateContent({
-                model:"gemini-3.5-flash",
+                model:model,
                 contents: prompt,
             });
 

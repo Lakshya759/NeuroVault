@@ -176,7 +176,7 @@ const sendMessage = asyncHandler(async (req, res) => {
         - Preserve the user's actual intent.
         - Return ONLY the standalone search query.
         `;
-        const retrievalResponse = await GeminiService.generate(retrievalPrompt);
+        const retrievalResponse = await GeminiService.generate(retrievalPrompt,"gemini-3.5-flash-lite");
         retrievalQuery = retrievalResponse.text.trim();
     }
     console.timeEnd("rewrite");
@@ -257,9 +257,14 @@ const sendMessage = asyncHandler(async (req, res) => {
 
     Provide a clear and useful answer.
     `;
+
+
+
     // Dummy response
     console.time("gemini");
-    const dummyResponse = await GeminiService.generate(prompt);
+    const dummyResponse = await GeminiService.generate(prompt,"gemini-3.5-flash-lite");
+
+
     console.timeEnd("gemini");
     // const dummyResponse ={
     //     text:"dummy response"
