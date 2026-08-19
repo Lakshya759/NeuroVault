@@ -55,6 +55,73 @@ const getConversation= asyncHandler(async(req,res)=>{
 
 //======================================================================================================
 
+const vagueWords = new Set([
+    "it",
+    "this",
+    "that",
+    "these",
+    "those",
+    "they",
+    "them",
+    "its",
+    "their",
+    "there",
+    "here"
+]);
+
+const shortVaguePhrases = new Set([
+    "what does it mean",
+    "what does that mean",
+    "what about it",
+    "why is that",
+    "why is it",
+    "how does it work",
+    "how does that work",
+    "what about that",
+    "explain that",
+    "explain this",
+    "tell me more",
+    "what about this"
+]);
+
+function needsQuestionRewrite(question, recentMessages) {
+    // First message → nothing to resolve
+    
+    if (recentMessages.length === 0) {
+        return false;
+    }
+
+    const normalized = question
+        .toLowerCase()
+        .trim()
+        .replace(/[?!.,]/g, "");
+
+    // Very short questions are more likely to depend on history
+    const wordCount = normalized.split(/\s+/).length;
+
+    // if (wordCount <= 5) {
+    //     return true;
+    // }
+
+    // Exact/common vague phrases
+    if (shortVaguePhrases.has(normalized)) {
+        return true;
+    }
+
+    // Check for vague pronouns/references
+    const words = new Set(normalized.split(/\s+/));
+
+    for (const word of vagueWords) {
+        if (words.has(word)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+
 
 const sendMessage = asyncHandler(async (req, res) => {
     console.time("controller");
@@ -63,7 +130,7 @@ const sendMessage = asyncHandler(async (req, res) => {
 
     if (!question?.trim()) throw new ApiError(400, "Question is required");
 
-    // Verify the conversation belongs to the logged-in user
+    // Verify the conversation belongs to the logged-in user---------------------------------------
     console.time("query");
     const conversation = await pool.query(getConversationQuery, [id, req.user.id]);
     console.timeEnd("query");
@@ -73,69 +140,85 @@ const sendMessage = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Conversation not found");
     }
 
-    //QUESTION REWRITING
-
+    // CHECKING IF QUESTION REWRITING REQUIRED-----------------------------------------------------
     const memoryResult = await pool.query(
         getConversationMemory,
         [id]
     );
-
-    const summary = memoryResult.rows[0].summary;
     const recentMessages = memoryResult.rows[0].recent_messages;
+    const isRewriteNeeded=needsQuestionRewrite(question,recentMessages);
 
-    const recentConversation = recentMessages
-        .map(turn => `
-    User: ${turn.question}
-    Assistant: ${turn.answer}
-    `)
-        .join("\n---\n");
+    //QUESTION REWRITING---------------------------------------------------------------------------
+    console.time("rewrite");
+    let retrievalQuery = question;
+    console.log(isRewriteNeeded)
+    if(isRewriteNeeded){
+        const recentConversation = recentMessages
+            .map(turn => `
+        User: ${turn.question}
+        Assistant: ${turn.answer}
+        `)
+            .join("\n---\n");
 
-    const retrievalPrompt = `
-    Given the conversation context and the user's current question,
-    rewrite the current question into a standalone search query.
+        const retrievalPrompt = `
+        Given the conversation context and the user's current question,
+        rewrite the current question into a standalone search query.
 
-    Conversation summary:
-    ${summary}
+        Recent conversation:
+        ${recentConversation}
 
-    Recent conversation:
-    ${recentConversation}
+        Current question:
+        ${question}
 
-    Current question:
-    ${question}
+        Rules:
+        - Resolve references such as "it", "this", "that", "they", etc.
+        - Include important entities and concepts from the conversation.
+        - Preserve the user's actual intent.
+        - Return ONLY the standalone search query.
+        `;
+        const retrievalResponse = await GeminiService.generate(retrievalPrompt);
+        retrievalQuery = retrievalResponse.text.trim();
+    }
+    console.timeEnd("rewrite");
 
-    Rules:
-    - Resolve references such as "it", "this", "that", "they", etc.
-    - Include important entities and concepts from the conversation.
-    - Preserve the user's actual intent.
-    - Return ONLY the standalone search query.
-    `;
-    const retrievalResponse = await GeminiService.generate(retrievalPrompt);
-    const retrievalQuery = retrievalResponse.text.trim();
 
-    // Retrival Step
+
+    // Retrival Step-----------------------------------------------------------------------
+    
+    console.time("embedding");
+
     const queryEmbedding = await getEmbedding(retrievalQuery);
+    
+    
+    console.timeEnd("embedding");
+    
+    console.time("vector-search");
     const result = await pool.query(
         similarityMatching,
         [JSON.stringify(queryEmbedding)]
     );
 
-    // CONTEXT GENERATION
+    
+    console.timeEnd("vector-search");
+    
+    // CONTEXT GENERATION-------------------------------------------------------------------
 
     const context = result.rows.length > 0
         ? result.rows
             .map((note, index) => `
     Note ${index + 1}
     Title: ${note.title}
+    Similarity: ${note.similarity}
     Content:
     ${note.content}
     `)
             .join("\n---\n")
         : "No relevant notes were found.";
+    
+    console.log(context)
 
-    // console.log(context)
 
-
-    // PROMPT GENERATION
+    // PROMPT GENERATION-----------------------------------------------------------------
     const prompt = `
     You are a personal knowledge assistant.
 
@@ -175,7 +258,9 @@ const sendMessage = asyncHandler(async (req, res) => {
     Provide a clear and useful answer.
     `;
     // Dummy response
+    console.time("gemini");
     const dummyResponse = await GeminiService.generate(prompt);
+    console.timeEnd("gemini");
     // const dummyResponse ={
     //     text:"dummy response"
     // };

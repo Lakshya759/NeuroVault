@@ -45,7 +45,7 @@ const similarityMatching=`
     FROM material_embeddings me
     JOIN material m
         ON m.id = me.material_id
-    WHERE 1 - (me.embedding <=> $1::vector) >= 0.60
+    WHERE 1 - (me.embedding <=> $1::vector) >= 0.40
     ORDER BY me.embedding <=> $1::vector
     LIMIT 3;
 `
