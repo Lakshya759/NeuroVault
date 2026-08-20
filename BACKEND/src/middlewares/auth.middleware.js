@@ -7,7 +7,7 @@ import pool from "../db/pool.js"
 
 export const verifyJWT=asyncHandler(async (req,res,next)=>{
     try {
-        console.log("cookies",req.cookies)
+        // console.log("cookies",req.cookies)
         const token=req.cookies?.token
         if(!token){
             throw new ApiError(401,"Unauthorised Access")

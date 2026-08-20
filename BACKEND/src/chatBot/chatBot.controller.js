@@ -186,6 +186,7 @@ const sendMessage = asyncHandler(async (req, res) => {
     // Retrival Step-----------------------------------------------------------------------
     
     console.time("embedding");
+    console.log(retrievalQuery)
 
     const queryEmbedding = await getEmbedding(retrievalQuery);
     
@@ -215,10 +216,10 @@ const sendMessage = asyncHandler(async (req, res) => {
             .join("\n---\n")
         : "No relevant notes were found.";
     
-    console.log(context)
+    console.log(question)
 
 
-    // PROMPT GENERATION-----------------------------------------------------------------
+    // GENERATION PROMPT-----------------------------------------------------------------
     const prompt = `
     You are a personal knowledge assistant.
 
@@ -228,7 +229,7 @@ const sendMessage = asyncHandler(async (req, res) => {
     ${context}
 
     QUESTION:
-    ${question}
+    ${retrievalQuery}
 
     Instructions:
 
@@ -260,7 +261,7 @@ const sendMessage = asyncHandler(async (req, res) => {
 
 
 
-    // Dummy response
+    // FINAL RESPONSE
     console.time("gemini");
     const dummyResponse = await GeminiService.generate(prompt,"gemini-3.5-flash-lite");
 
