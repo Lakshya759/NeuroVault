@@ -1,6 +1,7 @@
 // ChatMessage.jsx — renders a single message bubble with premium styling
 
 import MarkdownMessage from "./MarkdownMessage";
+import SourcesPanel from "./SourcesPanel";
 
 const GENERAL_PREFIX = "⚠️ I couldn't find any relevant notes";
 
@@ -9,7 +10,7 @@ export function detectSource(text) {
   return text.startsWith(GENERAL_PREFIX) ? "general" : "notes";
 }
 
-export default function ChatMessage({ role, text, isThinking = false }) {
+export default function ChatMessage({ role, text, isThinking = false, sources }) {
   const source = role === "ai" ? detectSource(text) : null;
 
   return (
@@ -38,6 +39,10 @@ export default function ChatMessage({ role, text, isThinking = false }) {
             <> 🌐 General knowledge · consider adding to vault </>
           )}
         </span>
+      )}
+
+      {role === "ai" && !isThinking && sources && sources.length > 0 && (
+        <SourcesPanel sources={sources} />
       )}
     </div>
   );

@@ -3,6 +3,7 @@
 //   note: { id, title, content, created_at }
 
 import { useState } from "react";
+import MarkdownMessage from "./MarkdownMessage";
 
 // Format ISO date string → "Aug 19, 2026"
 function formatDate(iso) {
@@ -24,6 +25,27 @@ const CARD_ACCENTS = [
   { dot: "#10b981", glow: "rgba(16, 185, 129, 0.15)" },
   { dot: "#f43f5e", glow: "rgba(244, 63, 94, 0.15)" },
 ];
+
+// Strip common Markdown tokens so the collapsed 2-line preview reads as clean plain text.
+// e.g.  "# Heading" → "Heading",  "**bold**" → "bold",  "- item" → "item"
+function stripMarkdown(text) {
+  if (!text) return "";
+  return text
+    .replace(/```[\s\S]*?```/g, "[code]")        // fenced code blocks → placeholder
+    .replace(/`[^`]+`/g, (m) => m.slice(1, -1))  // inline code → raw text
+    .replace(/^#{1,6}\s+/gm, "")                 // headings
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")           // bold
+    .replace(/(\*|_)(.*?)\1/g, "$2")              // italic
+    .replace(/~~(.*?)~~/g, "$1")                  // strikethrough
+    .replace(/!\[.*?\]\(.*?\)/g, "")              // images
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")      // links → label only
+    .replace(/^\s*[-*+]\s+/gm, "")               // unordered list markers
+    .replace(/^\s*\d+\.\s+/gm, "")               // ordered list markers
+    .replace(/^\s*>\s+/gm, "")                   // blockquotes
+    .replace(/\n{2,}/g, " ")                     // collapse blank lines
+    .replace(/\n/g, " ")                         // remaining newlines → space
+    .trim();
+}
 
 export default function NoteCard({ note }) {
   const [expanded, setExpanded] = useState(false);
@@ -62,14 +84,19 @@ export default function NoteCard({ note }) {
         </span>
       </div>
 
-      {/* Collapsed: 2-line preview */}
+      {/* Collapsed: 2-line plain-text preview (Markdown tokens stripped) */}
       {!expanded && (
-        <p className="note-card-preview">{note.content}</p>
+        <p className="note-card-preview">{stripMarkdown(note.content)}</p>
       )}
 
-      {/* Expanded: full content */}
+      {/* Expanded: full Markdown-rendered content */}
       {expanded && (
-        <div className="note-card-full">
+        <div
+          className="note-card-full"
+          // Stop the card's toggle-click from firing when the user interacts
+          // with content inside (e.g. code copy buttons, links)
+          onClick={(e) => e.stopPropagation()}
+        >
           <div
             style={{
               display: "flex",
@@ -85,7 +112,7 @@ export default function NoteCard({ note }) {
           >
             📄 Full Content
           </div>
-          {note.content}
+          <MarkdownMessage text={note.content || ""} />
         </div>
       )}
     </div>

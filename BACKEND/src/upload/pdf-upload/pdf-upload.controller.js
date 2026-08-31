@@ -41,7 +41,7 @@ const uploadPDF = asyncHandler(async (req, res) => {
     }
     
     const uploadedBy = req.user.id;
-    const result=processText(title,content,uploadedBy);
+    const result=await processText(title,content,uploadedBy);
     return res.status(201).json(
         new ApiResponse(
             201,

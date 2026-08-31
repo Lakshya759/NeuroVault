@@ -23,12 +23,13 @@ async function cleanPDFText(rawText){
     if(!rawText || !rawText.trim()){
         throw new ApiError(400,"No text found in PDF");
     }
-    const cleaningPrompt=`
-    You are processing text extracted from a PDF.
+    const cleaningPrompt = `
+You are processing text extracted from a PDF.
 
-    Your task is to clean formatting problems caused by PDF text extraction and generate a suitable title.
+Your task is to clean PDF extraction artifacts and format the
+document as Markdown.
 
-    IMPORTANT RULES:
+IMPORTANT RULES:
 
 1. Preserve ALL meaningful information from the source.
 
@@ -43,111 +44,99 @@ async function cleanPDFText(rawText){
 6. NEVER modify code, commands, formulas, numbers, SQL queries,
    API syntax, mathematical expressions, or technical terminology.
 
-7. You MAY repair formatting that was clearly caused by PDF extraction.
+7. You MAY repair formatting problems clearly caused by PDF extraction.
 
-8. If a word is broken across a line because of PDF extraction,
-   join it back together.
+8. If a word is broken across lines, join it.
 
    Example:
-   "DataFra"
-   "me"
-   → "DataFrame"
+   DataFra
+   me
+
+   becomes:
+   DataFrame
 
 9. If a sentence is broken across lines because of PDF layout,
-   join the lines into a single sentence.
+   join the lines into the same paragraph.
 
-10. If a code expression is broken across lines because of PDF layout,
-    join the lines without changing the code.
+10. If code is broken across lines because of PDF layout,
+    reconstruct the original code without changing it.
 
-    Example:
-    pd.groupby('col').agg({'a':'mean','b':'sum'}
-    )
-    →
-    pd.groupby('col').agg({'a':'mean','b':'sum'})
-
-11. Remove obvious page numbers such as:
+11. Remove obvious page numbers and PDF markers such as:
     "-- 1 of 3 --"
-    "-- 2 of 3 --"
 
 12. Remove repeated headers and footers only when they are clearly
     PDF layout artifacts.
 
-13. Preserve meaningful headings.
+13. Preserve the original ordering of the document.
 
-14. Preserve the original ordering of the content.
+14. Do not duplicate the document title inside content.
 
-15. Do not duplicate the document title inside the content.
+15. Generate a concise title based ONLY on the provided document.
 
-16. Generate a concise title based ONLY on the provided document.
+MARKDOWN FORMATTING:
 
-17. Return the cleaned content as plain text, not Markdown unless
-    Markdown is already clearly part of the source.
+16. Return the cleaned content as Markdown.
 
-    Return only the structured result.
+17. Convert clearly identifiable section titles into Markdown headings.
+    Main sections should use ##.
+    Subsections should use ###.
+    Do NOT invent headings.
 
-PDF extraction often introduces line breaks in the middle of words,
-sentences, and code.
+18. Convert clearly identifiable numbered lists into Markdown
+    numbered lists.
 
-You MUST repair these artifacts.
+19. Convert clearly identifiable bullet points into Markdown
+    bullet lists.
 
-Examples:
+20. Preserve paragraphs and meaningful spacing.
 
-"DataFra"
-"me"
-→ "DataFrame"
+21. Detect code sections and wrap them in fenced code blocks.
+    Use an appropriate language such as python only when the
+    language is clearly identifiable.
 
-"numeric"
-"ops"
-→ "numeric ops"
+22. NEVER modify the content inside a code block.
 
-"common M"
-"L format"
-→ "common ML format"
+23. Markdown formatting must only represent structure that already
+    exists in the source. Do not change the meaning of the document.
 
-When two lines are clearly part of the same sentence, combine them.
-
-When a code expression is split across lines, join the lines while
-preserving the exact code.
-
-Do not modify the actual code or technical content.
-
-Do not include the document title inside content.
-
-Do not include "Title:" inside the content.
-
-Remove obvious PDF page markers such as "-- 1 of 3 --".
-
-OUTPUT FORMAT:
+OUTPUT:
 
 Return ONLY a valid JSON object.
 
-The response MUST contain exactly these two fields:
-
 {
-  "title": "A concise and descriptive title for the document",
-  "content": "The cleaned document content"
+  "title": "A concise and descriptive title",
+  "content": "The complete cleaned document formatted as Markdown"
 }
 
-Rules for the JSON response:
+Rules:
 
+- Exactly two fields: title and content.
+- No explanation before or after the JSON.
 - Do NOT wrap the JSON in Markdown.
-- Do NOT add any explanation before or after the JSON.
-- Do NOT add any fields other than "title" and "content".
-- "title" must be a string.
-- "content" must be a string containing the complete cleaned document.
-- Preserve line breaks inside the "content" string using valid JSON escaping.
-- The "content" field must contain the entire cleaned document, not a summary.
-- The generated title must NOT be repeated at the beginning of "content".
-- Ensure the response is valid JSON that can be directly parsed using JSON.parse().
+- title must be a string.
+- content must be a string.
+- content must contain the COMPLETE document.
+- Do not put the title at the beginning of content.
+- Preserve all meaningful information.
+- Ensure the response is valid JSON that can be parsed using JSON.parse().
 
-    EXTRACTED PDF TEXT:
+EXTRACTED PDF TEXT:
 
-    ${rawText}
-    `
-    
+${rawText}
+`;
     const response= await GeminiService.generate(cleaningPrompt,"gemini-3.5-flash-lite");
 
-    const result = JSON.parse(response.text);
+    let text = response.text.trim();
+
+    if (text.startsWith("```")) {
+        text = text
+            .replace(/^```json\s*/i, "")
+            .replace(/^```\s*/i, "")
+            .replace(/\s*```$/i, "")
+            .trim();
+    }
+
+    const result = JSON.parse(text);
     console.log(response)
     return result;
 }

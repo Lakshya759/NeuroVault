@@ -163,8 +163,19 @@ export default function AskPage() {
       turns.forEach((turn) => {
         if (turn.question)
           loadedMessages.push({ id: `u-${turn.id}`, role: "user", text: turn.question });
-        if (turn.answer)
-          loadedMessages.push({ id: `a-${turn.id}`, role: "ai", text: turn.answer });
+        if (turn.answer) {
+          let sources = turn.sources;
+          if (!sources && turn.sources_json) {
+            try {
+              sources = typeof turn.sources_json === "string"
+                ? JSON.parse(turn.sources_json)
+                : turn.sources_json;
+            } catch (e) {
+              console.error("Failed to parse sources_json", e);
+            }
+          }
+          loadedMessages.push({ id: `a-${turn.id}`, role: "ai", text: turn.answer, sources });
+        }
       });
       setMessages(loadedMessages);
     } catch (err) {
@@ -223,7 +234,13 @@ export default function AskPage() {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === thinkingId
-            ? { id: turn.id || thinkingId, role: "ai", text: turn.answer, isThinking: false }
+            ? {
+                id: turn.id || thinkingId,
+                role: "ai",
+                text: turn.answer,
+                sources: turn.sources || (typeof turn.sources_json === "string" ? JSON.parse(turn.sources_json) : turn.sources_json),
+                isThinking: false
+              }
             : m
         )
       );
@@ -363,6 +380,7 @@ export default function AskPage() {
                     role={msg.role}
                     text={msg.text}
                     isThinking={msg.isThinking || false}
+                    sources={msg.sources}
                   />
                 ))}
               </>
