@@ -29,26 +29,31 @@ INSERT INTO conversationTurn (
     question,
     rewritten_question,
     answer,
+    sources_json,
     status
 )
-VALUES ($1, $2,$3, $4,$5)
+VALUES ($1, $2,$3, $4,$5,$6)
 RETURNING *;
 `
 
 //=====================================================
-const similarityMatching=`
-     SELECT
-        m.id,
+const similarityMatching = `
+    SELECT
+        m.id AS material_id,
         m.title,
-        m.content,
+        mc.id AS chunk_id,
+        mc.chunk_index,
+        mc.content,
         1 - (me.embedding <=> $1::vector) AS similarity
     FROM material_embeddings me
+    JOIN material_chunks mc
+        ON mc.id = me.chunk_id
     JOIN material m
-        ON m.id = me.material_id
-    WHERE 1 - (me.embedding <=> $1::vector) >= 0.40
+        ON m.id = mc.material_id
+    WHERE 1 - (me.embedding <=> $1::vector) >= 0.01
     ORDER BY me.embedding <=> $1::vector
     LIMIT 3;
-`
+`;
 
 //==============================================================
 const getConversationMemory = `

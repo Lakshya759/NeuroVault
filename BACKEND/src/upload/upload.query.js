@@ -13,9 +13,23 @@ VALUES ($1, $2)
 RETURNING *;
 `;
 
+const createMaterialChunkQuery = `
+    INSERT INTO material_chunks
+    (material_id, chunk_index, content)
+    VALUES ($1, $2, $3)
+    RETURNING *;
+`;
+
+const createChunkEmbeddingQuery = `
+    INSERT INTO material_embeddings
+    (chunk_id, embedding)
+    VALUES ($1, $2::vector)
+    RETURNING *;
+`;
+
 
 
 
 export{
-    REGISTER_MATERIAL,FETCH_MATERIAL,CREATE_EMBEDDING
+   createChunkEmbeddingQuery,createMaterialChunkQuery, REGISTER_MATERIAL,FETCH_MATERIAL,CREATE_EMBEDDING
 }

@@ -56,6 +56,25 @@ export function createNote(title, content) {
   return request("POST", "/material/upload", { title, content });
 }
 
+// PDF upload — uses FormData (multipart), NOT JSON
+export async function uploadPDF(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${BASE}/material/upload/pdf`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+    // NO Content-Type header — browser sets it automatically with boundary
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.message || `PDF upload failed (${res.status})`);
+  }
+  return data;
+}
+
 // ── Chat ─────────────────────────────────────────────────────────────────────
 
 export function getAllConversations() {

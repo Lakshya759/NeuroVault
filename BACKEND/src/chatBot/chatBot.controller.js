@@ -4,7 +4,7 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import pool from "../db/pool.js"
 import { getConversationMemory, sendMessageQuery,generateConversationQuery, getAllConversationQuery ,getConversationQuery,getConversationTurnsQuery,similarityMatching} from "./chatBot.query.js"
 import GeminiService from "./chatBot.services.js";
-import getEmbedding from "../upload/upload.services.js"
+import {getEmbedding} from "../upload/upload.services.js"
 const generateConversation= asyncHandler(async(req,res)=>{
     const user=req.user;
     const {title}=req.body;
@@ -188,9 +188,12 @@ const sendMessage = asyncHandler(async (req, res) => {
     console.time("embedding");
     console.log(retrievalQuery)
 
-    const queryEmbedding = await getEmbedding(retrievalQuery);
+    const queryEmbedding1 = await getEmbedding(retrievalQuery);
+    const queryEmbedding = queryEmbedding1[0];
     
     
+
+
     console.timeEnd("embedding");
     
     console.time("vector-search");
@@ -198,6 +201,14 @@ const sendMessage = asyncHandler(async (req, res) => {
         similarityMatching,
         [JSON.stringify(queryEmbedding)]
     );
+
+    const sources = result.rows.map(note => ({
+        chunkId: note.chunk_id,
+        materialId: note.material_id,
+        title: note.title,
+        content: note.content,
+        similarity: Number(note.similarity)
+    }));
 
     
     console.timeEnd("vector-search");
@@ -277,14 +288,21 @@ const sendMessage = asyncHandler(async (req, res) => {
         question,
         retrievalQuery,
         dummyResponse.text,
+        JSON.stringify(sources),
         "COMPLETED"
     ]);
     console.timeEnd("query");
     console.timeEnd("controller");
+    const turn = generatedTurn.rows[0];
+
+    
     res.status(201).json(
         new ApiResponse(
             201,
-            generatedTurn.rows[0],
+            {
+                ...turn,
+                sources: sources
+            },
             "Message sent successfully"
         )
     );

@@ -1,6 +1,4 @@
-// AuthPage.jsx — Login / Signup screen
-// Toggles between two modes with a single form.
-// On success, calls props.onLogin(user) so App.jsx can update auth state.
+// AuthPage.jsx — Premium login / signup screen for NeuroVault
 
 import { useState } from "react";
 import { login, register } from "../api";
@@ -23,10 +21,9 @@ export default function AuthPage({ onLogin }) {
 
     try {
       if (isSignup) {
-        // Register, then immediately log in to establish the session cookie
         await register(name, email, password);
         const data = await login(email, password);
-        onLogin(data.data); // data.data = user object from ApiResponse
+        onLogin(data.data);
       } else {
         const data = await login(email, password);
         onLogin(data.data);
@@ -49,24 +46,48 @@ export default function AuthPage({ onLogin }) {
   return (
     <div className="auth-page">
       <div className="auth-wrapper">
-        <div className="auth-logo">🧠 Knowledge OS</div>
+        {/* Logo */}
+        <div className="auth-logo">
+          <div className="auth-logo-icon">🧠</div>
+          <div className="auth-logo-name">NeuroVault</div>
+          <div className="auth-logo-tagline">Your personal AI-powered knowledge OS</div>
+        </div>
 
         <div className="form-card">
-          <h1 className="form-title">
-            {isSignup ? "Create an account" : "Welcome back"}
-          </h1>
+          {/* Mode tabs */}
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={`auth-tab${mode === "login" ? " active" : ""}`}
+              onClick={() => switchMode("login")}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              className={`auth-tab${mode === "signup" ? " active" : ""}`}
+              onClick={() => switchMode("signup")}
+            >
+              Create Account
+            </button>
+          </div>
+
           <p className="form-subtitle">
             {isSignup
-              ? "Start building your personal knowledge base."
-              : "Sign in to continue to your notes."}
+              ? "Start building your personal knowledge base today."
+              : "Welcome back — sign in to access your vault."}
           </p>
 
-          {error && <div className="error-box" role="alert">{error}</div>}
+          {error && (
+            <div className="error-box" role="alert">
+              ⚠️ {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} id="auth-form">
             {isSignup && (
               <div className="form-group">
-                <label htmlFor="auth-name">Name</label>
+                <label htmlFor="auth-name">Full Name</label>
                 <input
                   id="auth-name"
                   type="text"
@@ -80,7 +101,7 @@ export default function AuthPage({ onLogin }) {
             )}
 
             <div className="form-group">
-              <label htmlFor="auth-email">Email</label>
+              <label htmlFor="auth-email">Email Address</label>
               <input
                 id="auth-email"
                 type="email"
@@ -110,9 +131,12 @@ export default function AuthPage({ onLogin }) {
               type="submit"
               className="btn btn-primary btn-full"
               disabled={loading}
+              style={{ marginTop: 8 }}
             >
-              {loading ? <Spinner size="sm" /> : null}
-              {loading ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
+              <span>
+                {loading ? <Spinner size="sm" /> : null}
+                {loading ? "Please wait…" : isSignup ? "Create account →" : "Sign in →"}
+              </span>
             </button>
           </form>
         </div>
@@ -124,7 +148,7 @@ export default function AuthPage({ onLogin }) {
             type="button"
             onClick={() => switchMode(isSignup ? "login" : "signup")}
           >
-            {isSignup ? "Sign in" : "Sign up"}
+            {isSignup ? "Sign in" : "Sign up for free"}
           </button>
         </p>
       </div>

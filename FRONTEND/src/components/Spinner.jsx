@@ -1,4 +1,4 @@
-// Spinner.jsx — simple CSS-driven loading indicator
+// Spinner.jsx — CSS-driven loading indicator for NeuroVault
 // Props:
 //   size: "sm" | "" (default) | "lg"
 //   center: boolean — wrap in a centering div
