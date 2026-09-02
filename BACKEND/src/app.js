@@ -7,7 +7,7 @@ import { ApiError } from "./utils/ApiError.js";
 const app=express();
 
 app.use(cors({
-    origin: "https://neurovaultartificialintelligence.netlify.app",
+    origin: true,
     credentials: true,
 }))
 app.use(express.json())

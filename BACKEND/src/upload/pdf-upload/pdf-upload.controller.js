@@ -2,7 +2,7 @@ import {ApiError} from "../../utils/ApiError.js"
 import {asyncHandler} from "../../utils/asyncHandler.js"
 import {ApiResponse} from "../../utils/ApiResponse.js"
 import pool from "../../db/pool.js"
-import { extractPdfText ,cleanPDFText} from "./pdf-upload.service.js";
+import { extractPdfText ,cleanPDFText,getPDFPageCount} from "./pdf-upload.service.js";
 import {createChunkEmbeddingQuery, createMaterialChunkQuery,REGISTER_MATERIAL,FETCH_MATERIAL,CREATE_EMBEDDING} from "../upload.query.js"
 import {getEmbedding,processText} from "../upload.services.js"
 import chunkText from "../../utils/chunkText.js"
@@ -18,7 +18,13 @@ const uploadPDF = asyncHandler(async (req, res) => {
         throw new ApiError(400, "PDF file is required");
     }
 
+    const pages=await getPDFPageCount(req.file.buffer);
+    if(pages>50){
+        throw new ApiError(402,"File must have less than 50 pages");
+    }
+
     const rawText = await extractPdfText(req.file.buffer);
+    
 
     if (!rawText || !rawText.trim()) {
         throw new ApiError(
@@ -27,13 +33,52 @@ const uploadPDF = asyncHandler(async (req, res) => {
         );
     }
 
-    const cleanedDocument = await cleanPDFText(rawText);
-   
 
-    const title = cleanedDocument.title;
-    const content = cleanedDocument.content;
-    console.log(title)
-    console.log(content)
+    const chunks = await chunkText(rawText);
+
+    const batchSize = 5;
+    const cleanedChunks = [];
+
+    let title = null;
+
+    for (let i = 0; i < chunks.length; i += batchSize) {
+
+        const batch = chunks.slice(i, i + batchSize);
+
+        // console.log(
+        //     `Processing chunks ${i + 1} - ${Math.min(i + batchSize, chunks.length)}`
+        // );
+
+        // First batch:
+        // Generate title + clean the chunks
+        //
+        // Remaining batches:
+        // Clean chunks only
+        const isFirstBatch = i === 0;
+
+        const result = await cleanPDFText(batch, isFirstBatch);
+        
+        if (i === 0) {
+            console.log(result)
+            title = result.title;
+        }
+
+        cleanedChunks.push(...result.chunks);
+
+        // Optional delay between batches
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    const content= cleanedChunks.join("\n\n");
+
+    console.log("TITLE:", title);
+    
+
+
+   
+    // const content = cleanedDocument.content;
+    // console.log(title)
+    // console.log(content)
 
 
     if (!title?.trim() || !content?.trim()) {
