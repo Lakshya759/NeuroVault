@@ -1790,3 +1790,237 @@ a:hover { text-decoration: underline; color: var(--accent-2); }
   .chat-message { max-width: 90%; }
   :root { --nav-h: 56px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   INGESTION PAGE
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Drop zone disabled state ─────────────────────────────────────────────── */
+.ingest-dz-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.ingest-dropzone-wrapper { display: flex; flex-direction: column; }
+
+/* ── Ingestion jobs list ──────────────────────────────────────────────────── */
+.ingestion-jobs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Ingestion card ───────────────────────────────────────────────────────── */
+.ingestion-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  animation: card-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+@keyframes card-slide-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Accent top bar — changes color per phase */
+.ingestion-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-mid));
+  transition: background 0.4s ease;
+}
+
+.ingestion-card-completed {
+  border-color: rgba(52, 211, 153, 0.35);
+  box-shadow: 0 4px 24px rgba(52, 211, 153, 0.1);
+}
+.ingestion-card-completed::before {
+  background: linear-gradient(90deg, #10b981, var(--color-success));
+}
+
+.ingestion-card-failed {
+  border-color: rgba(248, 113, 113, 0.35);
+  box-shadow: 0 4px 24px rgba(248, 113, 113, 0.1);
+}
+.ingestion-card-failed::before {
+  background: linear-gradient(90deg, #dc2626, var(--color-error));
+}
+
+/* ── Card header row ─────────────────────────────────────────────────────── */
+.ingestion-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ingestion-card-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.ingestion-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ingestion-card-filename {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ingestion-card-size {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Phase label ─────────────────────────────────────────────────────────── */
+.ingestion-card-phase {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  letter-spacing: -0.1px;
+}
+
+.ingestion-card-sublabel {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  line-height: 1.45;
+}
+
+/* ── Percentage label ────────────────────────────────────────────────────── */
+.ingestion-card-pct {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-2);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* ── Meta badges (completed state) ──────────────────────────────────────── */
+.ingestion-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ingestion-card-meta-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--accent-mid);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  letter-spacing: 0.01em;
+}
+
+.ingestion-badge-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PROGRESS BAR
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* Shimmer overlay on the bar */
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Indeterminate — slides back and forth for "queued" state */
+.progress-bar.indeterminate {
+  animation: indeterminate-slide 1.6s ease-in-out infinite;
+}
+
+@keyframes indeterminate-slide {
+  0%   { transform: translateX(-100%); }
+  50%  { transform: translateX(150%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MATERIALS PAGE — OVERVIEW PANEL
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.materials-overview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.materials-overview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.materials-overview-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.materials-overview-value {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+

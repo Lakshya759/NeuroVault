@@ -14,6 +14,7 @@ import { getUser, logout } from "./api";
 import AuthPage from "./pages/AuthPage";
 import NotesPage from "./pages/NotesPage";
 import AskPage from "./pages/AskPage";
+import IngestionPage from "./pages/IngestionPage";
 import Spinner from "./components/Spinner";
 import "./App.css";
 
@@ -33,6 +34,14 @@ function Navbar({ user, onLogout }) {
         <span className="navbar-brand-icon">🧠</span>
         NeuroVault
       </span>
+
+      <NavLink
+        to="/ingest"
+        id="nav-ingest"
+        className={({ isActive }) => "navbar-link" + (isActive ? " active" : "")}
+      >
+        📥 Ingest
+      </NavLink>
 
       <NavLink
         to="/notes"
@@ -98,17 +107,30 @@ export default function App() {
       {user && <Navbar user={user} onLogout={() => setUser(null)} />}
 
       <Routes>
-        <Route path="/" element={<Navigate to={user ? "/notes" : "/auth"} replace />} />
+        {/* Default redirect — go to Ingest first so users see the hub */}
+        <Route path="/" element={<Navigate to={user ? "/ingest" : "/auth"} replace />} />
 
         <Route
           path="/auth"
-          element={user ? <Navigate to="/notes" replace /> : <AuthPage onLogin={setUser} />}
+          element={user ? <Navigate to="/ingest" replace /> : <AuthPage onLogin={setUser} />}
         />
 
+        {/* ── Content ingestion hub ──────────────────────────────────────── */}
+        <Route
+          path="/ingest"
+          element={
+            <Protected user={user}>
+              <IngestionPage />
+            </Protected>
+          }
+        />
+
+        {/* ── Notes viewer ──────────────────────────────────────────────── */}
         <Route
           path="/notes"
           element={<Protected user={user}><NotesPage /></Protected>}
         />
+
         <Route
           path="/ask"
           element={<Protected user={user}><AskPage /></Protected>}

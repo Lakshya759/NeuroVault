@@ -1,8 +1,8 @@
 // api.js — all fetch calls in one place
 // Auth is handled via HttpOnly cookies; no manual token management needed.
 
-const BASE = "https://neurovault-krby.onrender.com/api/v0";
-// const BASE = "http://localhost:8000/api/v0";
+// const BASE = "https://neurovault-krby.onrender.com/api/v0";
+const BASE = "http://localhost:8000/api/v0";
 
 // Helper: fires a fetch and returns parsed JSON.
 // Throws an Error with the server's message on non-2xx responses.
@@ -74,6 +74,20 @@ export async function uploadPDF(file) {
     throw new Error(data.message || `PDF upload failed (${res.status})`);
   }
   return data;
+}
+
+// ── PDF job status polling ────────────────────────────────────────────────────
+
+// Poll the BullMQ job status for a previously uploaded PDF.
+// Returns: { jobId, state, progress, result, error }
+// Possible states: "waiting" | "delayed" | "active" | "completed" | "failed"
+export function getPDFJobStatus(jobId) {
+  return request("GET", `/material/pdf/status/${jobId}`);
+}
+
+// Semantic alias for the materials library page — same endpoint as getNotes().
+export function getMaterials() {
+  return request("GET", "/material");
 }
 
 // ── Chat ─────────────────────────────────────────────────────────────────────

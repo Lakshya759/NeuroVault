@@ -4,8 +4,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build":"node -r dotenv/config src/server.js",
+    "build": "node -r dotenv/config src/server.js",
     "dev": "nodemon -r dotenv/config src/server.js",
+    "worker": "node src/workers/pdf.worker.js",
+    "worker:dev": "nodemon src/workers/pdf.worker.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -14,12 +16,15 @@
   "dependencies": {
     "@google/genai": "^2.13.0",
     "@langchain/textsplitters": "^1.0.1",
+    "@supabase/server": "^1.5.2",
     "axios": "^1.18.1",
     "bcrypt": "^6.0.0",
+    "bullmq": "^6.3.4",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "pdf-parse": "^2.4.5",
