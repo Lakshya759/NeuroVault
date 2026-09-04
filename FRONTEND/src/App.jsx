@@ -69,30 +69,10 @@ function Navbar({ user, onLogout }) {
 }
 
 // ── Protected route wrapper ───────────────────────────────────────────────────
-function Protected({ user, children }) {
-  if (!user) return <Navigate to="/auth" replace />;
-  return children;
-}
-
-// ── Root App ─────────────────────────────────────────────────────────────────
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    async function checkSession() {
-      try {
-        const data = await getUser();
-        setUser(data.data);
-      } catch (_) {
-        setUser(null);
-      } finally {
-        setChecking(false);
-      }
-    }
-    checkSession();
-  }, []);
-
+// While checking=true, render a loading splash instead of redirecting.
+// This prevents prematurely bouncing an authenticated user to /auth
+// just because the in-memory React state was cleared by a browser restart.
+function Protected({ checking, user, children }) {
   if (checking) {
     return (
       <div className="loading-screen">
@@ -101,25 +81,80 @@ export default function App() {
       </div>
     );
   }
+  if (!user) return <Navigate to="/auth" replace />;
+  return children;
+}
 
+// ── Root App ─────────────────────────────────────────────────────────────────
+export default function App() {
+  const [user, setUser] = useState(null);
+  // Start as true — auth state is unknown until the session check finishes.
+  // Using true (not false) as the initial value ensures we never
+  // redirect an authenticated user to /auth before the cookie is verified.
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const data = await getUser();
+        setUser(data.data);
+      } catch (_) {
+        // 401 / network error — treat as unauthenticated
+        setUser(null);
+      } finally {
+        setChecking(false);
+      }
+    }
+    checkSession();
+  }, []);
+
+  // BrowserRouter is placed here — wrapping the entire tree from the very
+  // first render — so window.location (e.g. /ingest) is captured by the
+  // router immediately, even while the session check is still in-flight.
+  // Previously the router was only mounted AFTER checking=false, meaning
+  // the URL was effectively discarded during the loading phase.
   return (
     <BrowserRouter>
       {user && <Navbar user={user} onLogout={() => setUser(null)} />}
 
       <Routes>
-        {/* Default redirect — go to Ingest first so users see the hub */}
-        <Route path="/" element={<Navigate to={user ? "/ingest" : "/auth"} replace />} />
+        {/* Default redirect — deferred until auth check is done */}
+        <Route
+          path="/"
+          element={
+            checking
+              ? (
+                <div className="loading-screen">
+                  <div className="loading-screen-logo">🧠 NeuroVault</div>
+                  <Spinner size="lg" />
+                </div>
+              )
+              : <Navigate to={user ? "/ingest" : "/auth"} replace />
+          }
+        />
 
+        {/* Auth page — also deferred to avoid flashing auth UI to valid session */}
         <Route
           path="/auth"
-          element={user ? <Navigate to="/ingest" replace /> : <AuthPage onLogin={setUser} />}
+          element={
+            checking
+              ? (
+                <div className="loading-screen">
+                  <div className="loading-screen-logo">🧠 NeuroVault</div>
+                  <Spinner size="lg" />
+                </div>
+              )
+              : user
+                ? <Navigate to="/ingest" replace />
+                : <AuthPage onLogin={setUser} />
+          }
         />
 
         {/* ── Content ingestion hub ──────────────────────────────────────── */}
         <Route
           path="/ingest"
           element={
-            <Protected user={user}>
+            <Protected checking={checking} user={user}>
               <IngestionPage />
             </Protected>
           }
@@ -128,12 +163,20 @@ export default function App() {
         {/* ── Notes viewer ──────────────────────────────────────────────── */}
         <Route
           path="/notes"
-          element={<Protected user={user}><NotesPage /></Protected>}
+          element={
+            <Protected checking={checking} user={user}>
+              <NotesPage />
+            </Protected>
+          }
         />
 
         <Route
           path="/ask"
-          element={<Protected user={user}><AskPage /></Protected>}
+          element={
+            <Protected checking={checking} user={user}>
+              <AskPage />
+            </Protected>
+          }
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />
