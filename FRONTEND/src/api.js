@@ -1,8 +1,8 @@
 // api.js — all fetch calls in one place
 // Auth is handled via HttpOnly cookies; no manual token management needed.
 
-// const BASE = "https://neurovault-krby.onrender.com/api/v0";
-const BASE = "http://localhost:8000/api/v0";
+const BASE = "https://neurovault-krby.onrender.com/api/v0";
+// const BASE = "http://localhost:8000/api/v0";
 
 // Helper: fires a fetch and returns parsed JSON.
 // Throws an Error with the server's message on non-2xx responses.
