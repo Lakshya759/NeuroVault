@@ -2,6 +2,7 @@ import {app} from "./app.js"
 import dotenv from "dotenv"
 dotenv.config();
 import pool from "./db/pool.js"
+import "./workers/pdf.worker.js"
 
 const startServer=async()=>{
     try{
