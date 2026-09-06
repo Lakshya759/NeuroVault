@@ -21,50 +21,130 @@ import "./App.css";
 // ── Navbar ────────────────────────────────────────────────────────────────────
 function Navbar({ user, onLogout }) {
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function handleLogout() {
     try { await logout(); } catch (_) {}
+    setMenuOpen(false);
     onLogout();
     navigate("/auth");
   }
 
+  // Close drawer when a nav link is clicked
+  function handleNavClick() {
+    setMenuOpen(false);
+  }
+
+  // Close drawer when clicking the backdrop
+  function handleBackdropClick() {
+    setMenuOpen(false);
+  }
+
   return (
-    <nav className="navbar" role="navigation" aria-label="Main navigation">
-      <span className="navbar-brand">
-        <span className="navbar-brand-icon">🧠</span>
-        NeuroVault
-      </span>
+    <>
+      <nav className="navbar" role="navigation" aria-label="Main navigation">
+        <span className="navbar-brand">
+          <span className="navbar-brand-icon">🧠</span>
+          NeuroVault
+        </span>
 
-      <NavLink
-        to="/ingest"
-        id="nav-ingest"
-        className={({ isActive }) => "navbar-link" + (isActive ? " active" : "")}
-      >
-        📥 Ingest
-      </NavLink>
+        {/* Desktop nav links */}
+        <div className="navbar-links">
+          <NavLink
+            to="/ingest"
+            id="nav-ingest"
+            className={({ isActive }) => "navbar-link" + (isActive ? " active" : "")}
+          >
+            📥 Ingest
+          </NavLink>
 
-      <NavLink
-        to="/notes"
-        id="nav-notes"
-        className={({ isActive }) => "navbar-link" + (isActive ? " active" : "")}
-      >
-        📝 Notes
-      </NavLink>
+          <NavLink
+            to="/notes"
+            id="nav-notes"
+            className={({ isActive }) => "navbar-link" + (isActive ? " active" : "")}
+          >
+            📝 Notes
+          </NavLink>
 
-      <NavLink
-        to="/ask"
-        id="nav-ask"
-        className={({ isActive }) => "navbar-link" + (isActive ? " active" : "")}
-      >
-        ✨ Ask AI
-      </NavLink>
+          <NavLink
+            to="/ask"
+            id="nav-ask"
+            className={({ isActive }) => "navbar-link" + (isActive ? " active" : "")}
+          >
+            ✨ Ask AI
+          </NavLink>
 
-      <div className="navbar-divider" />
+          <div className="navbar-divider" />
 
-      <button id="nav-logout" className="navbar-logout" onClick={handleLogout}>
-        Sign out
-      </button>
-    </nav>
+          <button id="nav-logout" className="navbar-logout" onClick={handleLogout}>
+            Sign out
+          </button>
+        </div>
+
+        {/* Hamburger button — mobile only */}
+        <button
+          id="nav-hamburger"
+          className={`navbar-hamburger${menuOpen ? " open" : ""}`}
+          onClick={() => setMenuOpen(o => !o)}
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+      </nav>
+
+      {/* Mobile drawer */}
+      {menuOpen && (
+        <div
+          className="navbar-backdrop"
+          onClick={handleBackdropClick}
+          aria-hidden="true"
+        />
+      )}
+      <div className={`navbar-drawer${menuOpen ? " open" : ""}`} aria-hidden={!menuOpen}>
+        <NavLink
+          to="/ingest"
+          id="nav-ingest-mobile"
+          className={({ isActive }) => "navbar-drawer-link" + (isActive ? " active" : "")}
+          onClick={handleNavClick}
+        >
+          <span className="navbar-drawer-link-icon">📥</span>
+          Ingest
+        </NavLink>
+
+        <NavLink
+          to="/notes"
+          id="nav-notes-mobile"
+          className={({ isActive }) => "navbar-drawer-link" + (isActive ? " active" : "")}
+          onClick={handleNavClick}
+        >
+          <span className="navbar-drawer-link-icon">📝</span>
+          Notes
+        </NavLink>
+
+        <NavLink
+          to="/ask"
+          id="nav-ask-mobile"
+          className={({ isActive }) => "navbar-drawer-link" + (isActive ? " active" : "")}
+          onClick={handleNavClick}
+        >
+          <span className="navbar-drawer-link-icon">✨</span>
+          Ask AI
+        </NavLink>
+
+        <div className="navbar-drawer-divider" />
+
+        <button
+          id="nav-logout-mobile"
+          className="navbar-drawer-logout"
+          onClick={handleLogout}
+        >
+          Sign out
+        </button>
+      </div>
+    </>
   );
 }
 
