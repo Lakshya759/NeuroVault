@@ -21,7 +21,7 @@ const uploadPDF = asyncHandler(async (req, res) => {
 
     const pages=await getPDFPageCount(req.file.buffer);
     if(pages>20){
-        throw new ApiError(402,"File must have less than 50 pages");
+        throw new ApiError(402,"File must have less than 20 pages");
     }
 
     //=================STORING THE PDF ON SUPABASE================
