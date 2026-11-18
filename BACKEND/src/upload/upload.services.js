@@ -3,13 +3,14 @@ import pool from "../db/pool.js"
 import {createChunkEmbeddingQuery,createMaterialChunkQuery,REGISTER_MATERIAL,CREATE_EMBEDDING,FETCH_MATERIAL} from "./upload.query.js"
 import chunkText from "../utils/chunkText.js"
 
-const getEmbedding = async (text) => {
+const getEmbedding = async (text,type) => {
     try {
         const response = await axios.post(
             "https://api.voyageai.com/v1/embeddings",
             {
                 input: text,
-                model: "voyage-4"
+                model: "voyage-4",
+                input_type: type
             },
             {
                 headers: {
@@ -46,14 +47,22 @@ const processText= async(title,content,uploadedBy)=>{
         const materialId = result.rows[0].id;
         // 3. Store chunks first
         const chunkIds = [];
+        const embeddingContent=[]
 
         for (let i = 0; i < chunks.length; i++) {
             const chunkResult = await client.query(
                 createMaterialChunkQuery,
-                [materialId, i, chunks[i]]
+                [materialId, i, chunks[i].content]
             );
 
             chunkIds.push(chunkResult.rows[0].id);
+            embeddingContent.push(chunks[i].embeddingText)
+            
+           
+        }
+        for(let i=0;i<embeddingContent.length;i=i+1){
+            console.log(embeddingContent[i])
+            console.log("--------------------------------------------------------------------------------------")
         }
 
         // 4. Generate embeddings in batches
@@ -61,12 +70,12 @@ const processText= async(title,content,uploadedBy)=>{
 
         for (let i = 0; i < chunks.length; i += batchSize) {
 
-            const batch = chunks.slice(i, i + batchSize);
+            const batch = embeddingContent.slice(i, i + batchSize);
             const batchChunkIds = chunkIds.slice(i, i + batchSize);
 
             // One Voyage request for the whole batch
-            const embeddings = await getEmbedding(batch);
-            console.log(embeddings)
+            const embeddings = await getEmbedding(batch,"document");
+            // console.log(embeddings)
 
             
 

@@ -188,7 +188,7 @@ const sendMessage = asyncHandler(async (req, res) => {
     console.time("embedding");
     console.log(retrievalQuery)
 
-    const queryEmbedding1 = await getEmbedding(retrievalQuery);
+    const queryEmbedding1 = await getEmbedding(retrievalQuery,"query");
     const queryEmbedding = queryEmbedding1[0];
     
     

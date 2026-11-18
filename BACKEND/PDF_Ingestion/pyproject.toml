@@ -1,0 +1,20 @@
+[project]
+name = "pdf-ingestion"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Lakshya759", email = "lakshyasri759@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pymupdf>=2.1",
+    "pymupdf4llm>=2.1",
+]
+
+[project.scripts]
+pdf-ingestion = "pdf_ingestion:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"

@@ -1,14 +1,42 @@
-import {Worker} from "bullmq";
+
+import { Worker } from "bullmq";
 import IORedis from "ioredis";
+
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
 import supabase from "../utils/supabaseConfig.js";
-import { extractPdfText } from "../upload/pdf-upload/pdf-upload.service.js";
-import chunkText from "../utils/chunkText.js"
+import { parsePDF } from "../upload/pdf-upload/pdf_parser.js"
+
+import chunkText from "../utils/chunkText.js";
+
 import { cleanPDFText } from "../upload/pdf-upload/pdf-upload.service.js";
 import { processText } from "../upload/upload.services.js";
+
 
 const connection = new IORedis(process.env.REDIS_URL, {
     maxRetriesPerRequest: null
 });
+
+function extractTitle(markdown) {
+
+    const headingMatch = markdown.match(/^#{1,2}\s+(.+)$/m);
+
+    if (headingMatch) {
+        return headingMatch[1].trim();
+    }
+
+    const firstLine = markdown
+        .split("\n")
+        .map(line => line.trim())
+        .find(line => line.length > 0);
+
+    return firstLine
+        ? firstLine.slice(0, 100)
+        : "Untitled Document";
+}
+
 
 const worker = new Worker(
     "pdf-processing",
@@ -18,8 +46,15 @@ const worker = new Worker(
         console.log(`Processing job ${job.id}`);
 
         const { filePath, uploadedBy } = job.data;
-        try{
-        // processing goes here
+
+        let tempDir;
+
+        try {
+
+            // =========================================
+            // STEP 1: DOWNLOAD PDF FROM SUPABASE
+            // =========================================
+
             const { data, error } = await supabase.storage
                 .from(process.env.SUPABASE_BUCKET)
                 .download(filePath);
@@ -29,96 +64,180 @@ const worker = new Worker(
                     `Failed to download PDF: ${error.message}`
                 );
             }
+
             const pdfBuffer = Buffer.from(
                 await data.arrayBuffer()
             );
 
-            //=============PDF PARSING==============================
-            const rawText = await extractPdfText(pdfBuffer);
+            await job.updateProgress(10);
 
-            if (!rawText || !rawText.trim()) {
+
+            // =========================================
+            // STEP 2: CREATE TEMPORARY PDF FILE
+            // =========================================
+
+            tempDir = await mkdtemp(
+                path.join(tmpdir(), "neurovault-pdf-")
+            );
+
+            const tempPdfPath = path.join(
+                tempDir,
+                "input.pdf"
+            );
+
+            await writeFile(tempPdfPath, pdfBuffer);
+
+
+            // =========================================
+            // STEP 3: PYTHON PDF PARSING
+            // =========================================
+
+            const parsedData = await parsePDF(tempPdfPath);
+
+            const markdown = parsedData.markdown;
+
+            if (!markdown || !markdown.trim()) {
                 throw new Error(
                     "Could not extract text from the PDF"
                 );
             }
 
+            console.log("PDF parsing completed");
+
+            console.log(
+                "Extracted characters:",
+                markdown.length
+            );
+
             await job.updateProgress(20);
-            //=======================================================
-            //===================CHUNKING THE TEXT===================
-            const chunks = await chunkText(rawText);
 
-            if (!chunks || chunks.length === 0) {
-                throw new Error("No chunks generated from PDF");
-            }
-            await job.updateProgress(30);
-            //=======================================================
-            //===============PROCESSING THE CHUNK WITH GEMINI==============
-            const batchSize = 5;
 
-            const cleanedChunks = [];
+            // =========================================
+            // STEP 4: CHUNKING THE MARKDOWN
+            // =========================================
 
-            let title = null;
+            // const chunks = await chunkText(markdown);
 
-            for (let i = 0; i < chunks.length; i += batchSize) {
+            // if (!chunks || chunks.length === 0) {
+            //     throw new Error(
+            //         "No chunks generated from PDF"
+            //     );
+            // }
 
-                const batch = chunks.slice(
-                    i,
-                    i + batchSize
-                );
+            // console.log("Total chunks:", chunks.length);
+            // for(let i=0;i<chunks.length;i=i+1){
+            //     console.log(chunks[i]);
+            // }
 
-                const isFirstBatch = i === 0;
+            // await job.updateProgress(30);
 
-                const result = await cleanPDFText(
-                    batch,
-                    isFirstBatch
-                );
 
-                if (isFirstBatch) {
-                    title = result.title;
-                }
+            // =========================================
+            // STEP 5: CLEAN CHUNKS USING GEMINI
+            // =========================================
 
-                cleanedChunks.push(
-                    ...result.chunks
-                );
+            // const batchSize = 5;
 
-                const progress =
-                    30 +
-                    Math.round(
-                        ((i + batch.length) / chunks.length) * 40
-                    );
+            // const cleanedChunks = [];
 
-                await job.updateProgress(progress);
+            // let title = null;
 
-                await new Promise(
-                    resolve => setTimeout(resolve, 1000)
-                );
-            }
-            //===============================================================
-            //===================CREATING THE FINAL CONTENT===========================================
+            // for (let i = 0; i < chunks.length; i += batchSize) {
 
-            const content = cleanedChunks.join("\n\n");
-            if (!title?.trim() || !content?.trim()) {
-                throw new Error(
-                    "Scanned PDFs are not Allowed"
-                );
-            }
-            await job.updateProgress(75);
-            //==================================================================
+            //     const batch = chunks.slice(
+            //         i,
+            //         i + batchSize
+            //     );
+
+            //     const isFirstBatch = i === 0;
+
+            //     const result = await cleanPDFText(
+            //         batch,
+            //         isFirstBatch
+            //     );
+
+            //     if (isFirstBatch) {
+            //         title = result.title;
+            //     }
+
+            //     cleanedChunks.push(
+            //         ...result.chunks
+            //     );
+
+            //     const progress =
+            //         30 +
+            //         Math.round(
+            //             ((i + batch.length) / chunks.length) * 40
+            //         );
+
+            //     await job.updateProgress(progress);
+
+            //     await new Promise(
+            //         resolve => setTimeout(resolve, 1000)
+            //     );
+            // }
+
+
+            // =========================================
+            // STEP 6: CREATE FINAL CONTENT
+            // =========================================
+
+            // const content = chunks.join("\n\n");
+
+            // if (!title?.trim() || !content?.trim()) {
+            //     throw new Error(
+            //         "Could not generate valid content from PDF"
+            //     );
+            // }
+
+            await job.updateProgress(50);
+
+
+            // =========================================
+            // STEP 7: SAVE CONTENT
+            // =========================================
+            const title =extractTitle(markdown)
+
             const result = await processText(
                 title,
-                content,
+                markdown,
                 uploadedBy
             );
+
             await job.updateProgress(100);
 
-            
             return {
                 materialId: result.id,
                 title
             };
-        }catch(error){
-            console.error(`❌ Job ${job.id} failed:`,error);
+
+
+        } catch (error) {
+
+            console.error(
+                `❌ Job ${job.id} failed:`,
+                error
+            );
+
             throw error;
+
+        } finally {
+
+            // =========================================
+            // STEP 8: DELETE TEMPORARY PDF
+            // =========================================
+
+            if (tempDir) {
+                await rm(tempDir, {
+                    recursive: true,
+                    force: true
+                }).catch(error => {
+                    console.error(
+                        "Temporary PDF cleanup failed:",
+                        error
+                    );
+                });
+            }
         }
 
     },
@@ -128,38 +247,24 @@ const worker = new Worker(
         concurrency: 1
     }
 );
-worker.on(
-    "completed",
-    (job)=>{
-        console.log(`✅ Job ${job.id} completed`)
-    }
-);
-
-worker.on(
-    "failed",
-    (job,error)=>{
-        console.error( `❌ Job ${job?.id} failed:`,error.message)
-    }
-);
-
-worker.on(
-    "error",
-    (error) => {
-
-        console.error(
-            "Worker error:",
-            error
-        );
-    }
-);
-
-console.log(
-    "👷 PDF Worker is running...");
 
 
+worker.on("completed", (job) => {
+    console.log(`✅ Job ${job.id} completed`);
+});
 
 
+worker.on("failed", (job, error) => {
+    console.error(
+        `❌ Job ${job?.id} failed:`,
+        error.message
+    );
+});
 
 
+worker.on("error", (error) => {
+    console.error("Worker error:", error);
+});
 
 
+console.log("👷 PDF Worker is running...");

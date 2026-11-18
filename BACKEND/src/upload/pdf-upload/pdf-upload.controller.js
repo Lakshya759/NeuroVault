@@ -10,10 +10,8 @@ import supabase from "../../utils/supabaseConfig.js";
 import crypto from "crypto";
 import { pdfQueue } from "../../queues/pdf.queue.js";
 
-
-
-
 const uploadPDF = asyncHandler(async (req, res) => {
+    
 
     if (!req.file) {
         throw new ApiError(400, "PDF file is required");
@@ -23,7 +21,7 @@ const uploadPDF = asyncHandler(async (req, res) => {
     if(pages>20){
         throw new ApiError(402,"File must have less than 20 pages");
     }
-
+    
     //=================STORING THE PDF ON SUPABASE================
 
     const fileName = `${crypto.randomUUID()}.pdf`;
@@ -36,11 +34,12 @@ const uploadPDF = asyncHandler(async (req, res) => {
     });
     
     if (error) {
+        console.log(error)
         throw new ApiError(500, error.message);
     }
-    
+    console.log("lakshya")
     //============================================================
-
+    
     const job = await pdfQueue.add(
         "process-pdf",
         {
