@@ -4,6 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "start": "node -r dotenv/config src/server.js",
     "build": "node -r dotenv/config src/server.js",
     "dev": "nodemon -r dotenv/config src/server.js",
     "worker": "node src/workers/pdf.worker.js",

@@ -7,6 +7,16 @@ const pool=new Pool({
         rejectUnauthorized:false
     }
 });
+console.log("Database URL diagnostics:", {
+    exists: !!process.env.DATABASE_URL,
+    hostname: (() => {
+        try {
+            return new URL(process.env.DATABASE_URL).hostname;
+        } catch {
+            return "INVALID URL";
+        }
+    })()
+});
 
 
 export default pool;
